@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-
 	"github.com/rs/cors"
 	"github.com/rs/rest-layer-mongo"
 	"github.com/rs/rest-layer/resource"
