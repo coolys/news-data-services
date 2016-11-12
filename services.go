@@ -9,7 +9,7 @@ import (
 	"github.com/rs/rest-layer/rest"
 	"github.com/rs/rest-layer/schema"
 	"gopkg.in/mgo.v2"
-	"golang.org/x/net/context"	
+	"golang.org/x/net/context"
 )
 
 var (
@@ -851,7 +851,7 @@ func exposesWithMongoDB( db string, index resource.Index, session *mgo.Session) 
 }
 
 func main() {
-	session, err := mgo.Dial("127.0.0.1")
+	session, err := mgo.Dial("54.167.196.135")
 	if err != nil {
 		log.Fatalf("Can't connect to MongoDB: %s", err)
 	}
