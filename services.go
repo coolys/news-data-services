@@ -803,15 +803,7 @@ func (r myResponseFormatter) FormatList(ctx context.Context, headers http.Header
 	}
 }
 
-func main() {
-	session, err := mgo.Dial("127.0.0.1")
-	if err != nil {
-		log.Fatalf("Can't connect to MongoDB: %s", err)
-	}
-	db := "test_rest_layer"
-
-	index := resource.NewIndex()
-
+func exposesWithMongoDB( db string, index resource.Index, session *mgo.Session) {
 	users := index.Bind("users", user, mongo.NewHandler(session, db, "users"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
@@ -856,6 +848,18 @@ func main() {
 	index.Bind("channel", channel, mongo.NewHandler(session, db, "channels"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
+}
+
+func main() {
+	session, err := mgo.Dial("127.0.0.1")
+	if err != nil {
+		log.Fatalf("Can't connect to MongoDB: %s", err)
+	}
+	db := "test_rest_layer"
+
+	index := resource.NewIndex()
+
+  exposesWithMongoDB(db, index, session)
 
 	api, err := rest.NewHandler(index)
 	if err != nil {
