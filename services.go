@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"github.com/rs/cors"
 	"github.com/rs/rest-layer-mongo"
-	"github.com/rs/rest-layer/resource"
-	"github.com/rs/rest-layer/rest"
-	"github.com/rs/rest-layer/schema"
+	"github.com/cool-rest/rest-layer/resource"
+	"github.com/cool-rest/rest-layer/rest"
+	"github.com/cool-rest/rest-layer/schema"
 	"gopkg.in/mgo.v2"
 	"golang.org/x/net/context"
 )
@@ -786,6 +786,18 @@ var (
 	}
 )
 
+type ResponseFormatter interface {
+    // FormatItem formats a single item in a format ready to be serialized by the ResponseSender
+    FormatItem(ctx context.Context, headers http.Header, i *resource.Item, skipBody bool) (context.Context, interface{})
+    // FormatList formats a list of items in a format ready to be serialized by the ResponseSender
+    FormatList(ctx context.Context, headers http.Header, l *resource.ItemList, skipBody bool) (context.Context, interface{})
+    // FormatError formats a REST formated error or a simple error in a format ready to be serialized by the ResponseSender
+    FormatError(ctx context.Context, headers http.Header, err error, skipBody bool) (context.Context, interface{})
+}
+type ResponseSender interface {
+    // Send serialize the body, sets the given headers and write everything to the provided response writer
+    Send(ctx context.Context, w http.ResponseWriter, status int, headers http.Header, body interface{})
+}
 type myResponseFormatter struct {
 	// Extending default response sender
 	rest.DefaultResponseFormatter
