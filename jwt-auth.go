@@ -312,7 +312,7 @@ func main() {
 	// Init the db with some users (user registration is not handled by this example)
 	secret, _ := schema.Password{}.Validate("secret")
 	users.Insert(context.Background(), nil, []*resource.Item{
-		{ID: "admin", Updated: time.Now(), ETag: "abcd", Payload: map[string]interface{}{
+		{ID: "jack", Updated: time.Now(), ETag: "abcd", Payload: map[string]interface{}{
 			"id":       "jack",
 			"name":     "Jack Sparrow",
 			"password": secret,
@@ -380,22 +380,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	token, err := jwt.Parse(johnTokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte("secret"), nil
-	})
-
-	if token.Valid {
-		fmt.Println("You look nice today")
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		    fmt.Println(claims["user_id"])
-		} else {
-		    fmt.Println(err)
-		}
-	} else{
-		fmt.Println("Not valid")
-	}
-
 	// Serve it
 	log.Print("Serving API on http://localhost:8080")
 	log.Printf("Your token secret is %q, change it with the `-jwt-secret' flag", *jwtSecret)
