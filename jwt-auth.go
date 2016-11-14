@@ -128,7 +128,7 @@ func (a AuthResourceHook) OnFind(ctx context.Context, r *http.Request, lookup *r
 	// Reject unauthorized users
 	fmt.Println("OnFind ctx:", ctx)
 	fmt.Println("OnFind r:", r)
-	user, found := UserFromContext(ctx)
+	user, found := UserFromToken(a.users, ctx, r)
 	if !found {
 		return resource.ErrUnauthorized
 	}
@@ -148,7 +148,7 @@ func (a AuthResourceHook) OnGot(ctx context.Context, r *http.Request, item **res
 		return
 	}
 	// Reject unauthorized users
-	user, found := UserFromContext(ctx)
+	user, found := UserFromToken(a.users, ctx, r)
 	if !found {
 		*err = resource.ErrUnauthorized
 		return
@@ -187,18 +187,25 @@ func (a AuthResourceHook) OnUpdate(ctx context.Context, r *http.Request, item *r
 	fmt.Println("OnUpdate ctx:", ctx)
 	fmt.Println("OnUpdate r:", r)
 	// Reject unauthorized users
-	user, found := UserFromContext(ctx)
+	user, found := UserFromToken(a.users, ctx, r)
 	if !found {
 		return resource.ErrUnauthorized
 	}
 	// Check access right
+	fmt.Println("original.Payload[a.UserField]:", original.Payload[a.UserField])
+	fmt.Println("original.Payload[a.UserField]:", original)
 	if u, found := original.Payload[a.UserField]; !found || u != user.ID {
+		fmt.Println("u:", u)
+		fmt.Println("user.ID:", user.ID)
+		fmt.Println("found:", found)
 		return resource.ErrUnauthorized
 	}
 	// Ensure user field is not altered
+	fmt.Println("item:", item)
+ /*
 	if u, found := item.Payload[a.UserField]; !found || u != user.ID {
-		return resource.ErrUnauthorized
-	}
+		eturn resource.ErrUnauthorized
+	}*/
 	return nil
 }
 
@@ -207,7 +214,7 @@ func (a AuthResourceHook) OnDelete(ctx context.Context, r *http.Request, item *r
 	fmt.Println("OnDelete ctx:", ctx)
 	fmt.Println("OnDelete r:", r)
 	// Reject unauthorized users
-	user, found := UserFromContext(ctx)
+	user, found := UserFromToken(a.users, ctx, r)
 	if !found {
 		return resource.ErrUnauthorized
 	}
@@ -223,7 +230,7 @@ func (a AuthResourceHook) OnClear(ctx context.Context, r *http.Request, lookup *
 	fmt.Println("OnClear ctx:", ctx)
 	fmt.Println("OnClear r:", r)
 	// Reject unauthorized users
-	user, found := UserFromContext(ctx)
+	user, found := UserFromToken(a.users, ctx, r)
 	if !found {
 		return resource.ErrUnauthorized
 	}
