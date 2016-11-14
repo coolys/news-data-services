@@ -1,6 +1,6 @@
 FROM golang:onbuild
 
-RUN go get "github.com/justinas/alice"
+RUN go get "github.com/cool-rest/alice"
 RUN go get "github.com/cool-rest/rest-layer-mem"
 RUN go get "github.com/cool-rest/rest-layer/"
 RUN go get "github.com/cool-rest/xlog"
