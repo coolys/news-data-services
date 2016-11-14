@@ -6,16 +6,17 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/cool-rest/alice"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
-	//"github.com/cool-rest/rest-layer-mem"
+	"github.com/cool-rest/alice"
 	"github.com/cool-rest/rest-layer/resource"
 	"github.com/cool-rest/rest-layer/rest"
 	"github.com/cool-rest/rest-layer/schema"
 	"github.com/cool-rest/xaccess"
 	"github.com/cool-rest/xlog"
 	"golang.org/x/net/context"
+	"gopkg.in/mgo.v2"
+	"github.com/cool-rest/rest-layer-mongo"
 )
 
 // NOTE: this example show how to integrate REST Layer with JWT. No authentication is performed
