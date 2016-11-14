@@ -959,36 +959,40 @@ var (
 			},
 		},
 	}
-
+	// Define a user resource schema
 	user = schema.Schema{
 		Fields: schema.Fields{
-			"id":      schema.IDField,
-			"created": schema.CreatedField,
-			"updated": schema.UpdatedField,
+			"id": {
+				Validator: &schema.String{
+					MinLen: 2,
+					MaxLen: 50,
+				},
+			},
 			"name": {
 				Required:   true,
 				Filterable: true,
-				Sortable:   true,
 				Validator: &schema.String{
 					MaxLen: 150,
 				},
 			},
+			"password": schema.PasswordField,
 		},
 	}
 
 	// Define a post resource schema
 	post = schema.Schema{
 		Fields: schema.Fields{
-			"id":      schema.IDField,
-			"created": schema.CreatedField,
-			"updated": schema.UpdatedField,
+			"id": schema.IDField,
+			// Define a user field which references the user owning the post.
+			// See bellow, the content of this field is enforced by the fact
+			// that posts is a sub-resource of users.
 			"user": {
 				//Required:   true,
 				Filterable: true,
 				Validator: &schema.Reference{
 					Path: "users",
 				},
-				OnInit: func(ctx context.Context, value interface{}) interface{} {
+				/*OnInit: func(ctx context.Context, value interface{}) interface{} {
 					// If not set, set the user to currently logged user if any
 					fmt.Printf("value: %#v\n", value)
 					if value == nil {
@@ -999,28 +1003,16 @@ var (
 					}
 					fmt.Printf("value: %#v\n", value)
 					return value
+				},*/
+			},
+			"title": {
+				Required: true,
+				Validator: &schema.String{
+					MaxLen: 150,
 				},
 			},
-			"public": {
-				Filterable: true,
-				Validator:  &schema.Bool{},
-			},
-			"meta": {
-				Schema: &schema.Schema{
-					Fields: schema.Fields{
-						"title": {
-							Required: true,
-							Validator: &schema.String{
-								MaxLen: 150,
-							},
-						},
-						"body": {
-							Validator: &schema.String{
-								MaxLen: 100000,
-							},
-						},
-					},
-				},
+			"body": {
+				Validator: &schema.String{},
 			},
 		},
 	}
@@ -1047,47 +1039,6 @@ func main() {
 		AllowedModes: resource.ReadWrite,
 	})
 
-	categories := index.Bind("categories", category, mongo.NewHandler(session, db, "categories"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-	categories.Bind("parent", "parent", category, mongo.NewHandler(session, db, "categories"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-
-	posts := index.Bind("posts", post, mongo.NewHandler(session, db, "posts"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-
-	users.Bind("posts", "user", post, mongo.NewHandler(session, db, "posts"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-
-	users.Bind("feeds", "user", post, mongo.NewHandler(session, db, "feeds"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-
-	index.Bind("data", data, mongo.NewHandler(session, db, "datas"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-	index.Bind("feed", feed, mongo.NewHandler(session, db, "feeds"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-	index.Bind("news", news, mongo.NewHandler(session, db, "news"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-	index.Bind("video", video, mongo.NewHandler(session, db, "videos"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-	index.Bind("photo", photo, mongo.NewHandler(session, db, "photos"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-	index.Bind("country", video, mongo.NewHandler(session, db, "countries"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-	index.Bind("channel", channel, mongo.NewHandler(session, db, "channels"), resource.Conf{
-		AllowedModes: resource.ReadWrite,
-	})
-
 	// Init the db with some users (user registration is not handled by this example)
 	secret, _ := schema.Password{}.Validate("secret")
 	users.Insert(context.Background(), nil, []*resource.Item{
@@ -1103,7 +1054,10 @@ func main() {
 		}},
 	})
 
-
+	// Bind post on /posts
+	posts := index.Bind("posts", post, mongo.NewHandler(session, db, "posts"), resource.Conf{
+		AllowedModes: resource.ReadWrite,
+	})
 
 	// Protect resources
 	users.Use(AuthResourceHook{UserField: "id", users:users})
@@ -1128,46 +1082,9 @@ func main() {
 	resource.Logger = func(ctx context.Context, level resource.LogLevel, msg string, fields map[string]interface{}) {
 		xlog.FromContext(ctx).OutputF(xlog.Level(level), 2, msg, fields)
 	}
-
-	// Setup auth middleware
-	jwtSecretBytes := []byte(*jwtSecret)
-	c.Append(NewJWTHandler(users, func(t *jwt.Token) (interface{}, error) {
-		if t.Method != jwt.SigningMethodHS256 {
-			return nil, jwt.ErrInvalidKey
-		}
-		return jwtSecretBytes, nil
-	}))
-
 	// Bind the API under /
 	http.Handle("/", c.Then(api))
 
-	// Demo tokens
-	jackToken := jwt.New(jwt.SigningMethodHS256)
-	jackClaims := jackToken.Claims.(jwt.MapClaims)
-	jackClaims["user_id"] = "jack"
-	jackTokenString, err := jackToken.SignedString(jwtSecretBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-	johnToken := jwt.New(jwt.SigningMethodHS256)
-	johnClaims := johnToken.Claims.(jwt.MapClaims)
-	johnClaims["user_id"] = "john"
-	johnTokenString, err := johnToken.SignedString(jwtSecretBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Serve it
-	log.Print("Serving API on http://localhost:8080")
-	log.Printf("Your token secret is %q, change it with the `-jwt-secret' flag", *jwtSecret)
-	log.Print("Play with tokens:\n",
-		"\n",
-		"- http :8080/posts access_token==", johnTokenString, " title=\"John's post\"\n",
-		"- http :8080/posts access_token==", johnTokenString, "\n",
-		"- http :8080/posts\n",
-		"\n",
-		"- http :8080/posts access_token==", jackTokenString, " title=\"Jack's post\"\n",
-		"- http :8080/posts access_token==", jackTokenString, "\n",
-	)
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
