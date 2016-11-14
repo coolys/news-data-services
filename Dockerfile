@@ -4,7 +4,7 @@ RUN go get "github.com/justinas/alice"
 RUN go get "github.com/cool-rest/rest-layer-mem"
 RUN go get "github.com/cool-rest/rest-layer/"
 RUN go get "github.com/cool-rest/xlog"
-RUN go get "github.com/rs/xaccess"
+RUN go get "github.com/cool-rest/xaccess"
 RUN go get "github.com/graphql-go/graphql"
 
 RUN go get "github.com/cool-rest/cors"

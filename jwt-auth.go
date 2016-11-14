@@ -17,7 +17,7 @@ import (
 	"github.com/cool-rest/rest-layer/resource"
 	"github.com/cool-rest/rest-layer/rest"
 	"github.com/cool-rest/rest-layer/schema"
-	"github.com/rs/xaccess"
+	"github.com/cool-rest/xaccess"
 	"github.com/cool-rest/xlog"
 	"golang.org/x/net/context"
 )
