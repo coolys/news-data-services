@@ -1059,6 +1059,34 @@ func main() {
 		AllowedModes: resource.ReadWrite,
 	})
 
+
+	index.Bind("categories", category, mongo.NewHandler(session, db, "categories"), resource.Conf{
+ 	 AllowedModes: resource.ReadWrite,
+  })
+
+  index.Bind("data", data, mongo.NewHandler(session, db, "datas"), resource.Conf{
+ 	 AllowedModes: resource.ReadWrite,
+  })
+  index.Bind("feed", feed, mongo.NewHandler(session, db, "feeds"), resource.Conf{
+ 	 AllowedModes: resource.ReadWrite,
+  })
+  index.Bind("news", news, mongo.NewHandler(session, db, "news"), resource.Conf{
+ 	 AllowedModes: resource.ReadWrite,
+  })
+  index.Bind("video", video, mongo.NewHandler(session, db, "videos"), resource.Conf{
+ 	 AllowedModes: resource.ReadWrite,
+  })
+  index.Bind("photo", photo, mongo.NewHandler(session, db, "photos"), resource.Conf{
+ 	 AllowedModes: resource.ReadWrite,
+  })
+  index.Bind("country", video, mongo.NewHandler(session, db, "countries"), resource.Conf{
+ 	 AllowedModes: resource.ReadWrite,
+  })
+  index.Bind("channel", channel, mongo.NewHandler(session, db, "channels"), resource.Conf{
+ 	 AllowedModes: resource.ReadWrite,
+  })
+
+
 	// Protect resources
 	users.Use(AuthResourceHook{UserField: "id", users:users})
 	posts.Use(AuthResourceHook{UserField: "user", users:users})
