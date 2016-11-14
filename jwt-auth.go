@@ -41,6 +41,33 @@ func UserFromContext(ctx context.Context) (*resource.Item, bool) {
 	return user, ok
 }
 
+func UserFromToken(users *resource.Resource, ctx context.Context, r *http.Request) (*resource.Item, bool){
+	tokenString, err := request.HeaderExtractor{"Authorization"}.ExtractToken(r)
+	fmt.Println("tokenString:", tokenString)
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+	if token.Valid {
+		fmt.Println("You look nice today")
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		    fmt.Println(claims["user_id"])
+				user, err := users.Get(ctx, r, claims["user_id"])
+				if err == nil && user != nil {
+					return user, true
+				} else {
+					return nil, false
+				}
+		} else {
+		    fmt.Println(err)
+				return nil, false
+		}
+	} else{
+		fmt.Println("Not valid")
+		return nil, false
+	}
+
+}
+
 // NewJWTHandler parse and validates JWT token if present and store it in the net/context
 func NewJWTHandler(users *resource.Resource, jwtKeyFunc jwt.Keyfunc) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -92,6 +119,8 @@ func NewJWTHandler(users *resource.Resource, jwtKeyFunc jwt.Keyfunc) func(next h
 // AuthResourceHook is a resource event handler that protect the resource from unauthorized users
 type AuthResourceHook struct {
 	UserField string
+	users *resource.Resource
+
 }
 
 // OnFind implements resource.FindEventHandler interface
@@ -135,23 +164,22 @@ func (a AuthResourceHook) OnGot(ctx context.Context, r *http.Request, item **res
 func (a AuthResourceHook) OnInsert(ctx context.Context, r *http.Request, items []*resource.Item) error {
 		fmt.Println("OnInsert ctx:", ctx)
 		fmt.Println("OnInsert r:", r)
-	// Reject unauthorized users
-	user, found := UserFromContext(ctx)
-	if !found {
-		return resource.ErrUnauthorized
-	}
-	// Check access right
-	for _, item := range items {
-		if u, found := item.Payload[a.UserField]; found {
-			if u != user.ID {
-				return resource.ErrUnauthorized
-			}
-		} else {
-			// If no user set for the item, set it to current user
-			item.Payload[a.UserField] = user.ID
+		user, found := UserFromToken(a.users, ctx, r)
+		if !found {
+			return resource.ErrUnauthorized
 		}
-	}
-	return nil
+			// Check access right
+		for _, item := range items {
+			if u, found := item.Payload[a.UserField]; found {
+				if u != user.ID {
+					return resource.ErrUnauthorized
+				}
+			} else {
+				// If no user set for the item, set it to current user
+				item.Payload[a.UserField] = user.ID
+			}
+		}
+		return nil
 }
 
 // OnUpdate implements resource.UpdateEventHandler interface
@@ -302,8 +330,8 @@ func main() {
 	})
 
 	// Protect resources
-	users.Use(AuthResourceHook{UserField: "id"})
-	posts.Use(AuthResourceHook{UserField: "user"})
+	users.Use(AuthResourceHook{UserField: "id", users:users})
+	posts.Use(AuthResourceHook{UserField: "user", users:users})
 
 	// Create API HTTP handler for the resource graph
 	api, err := rest.NewHandler(index)
@@ -351,6 +379,21 @@ func main() {
 	johnTokenString, err := johnToken.SignedString(jwtSecretBytes)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	token, err := jwt.Parse(johnTokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+
+	if token.Valid {
+		fmt.Println("You look nice today")
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		    fmt.Println(claims["user_id"])
+		} else {
+		    fmt.Println(err)
+		}
+	} else{
+		fmt.Println("Not valid")
 	}
 
 	// Serve it
