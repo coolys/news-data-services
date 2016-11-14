@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/request"
 	"github.com/cool-rest/alice"
+	"github.com/dgrijalva/jwt-go/request"
 	//"github.com/cool-rest/rest-layer-mem"
 	"github.com/cool-rest/rest-layer/resource"
 	"github.com/cool-rest/rest-layer/rest"
@@ -17,8 +16,6 @@ import (
 	"github.com/cool-rest/xaccess"
 	"github.com/cool-rest/xlog"
 	"golang.org/x/net/context"
-	"gopkg.in/mgo.v2"
-	"github.com/cool-rest/rest-layer-mongo"
 )
 
 // NOTE: this example show how to integrate REST Layer with JWT. No authentication is performed
@@ -40,7 +37,7 @@ func UserFromContext(ctx context.Context) (*resource.Item, bool) {
 	return user, ok
 }
 
-func UserFromToken(users *resource.Resource, ctx context.Context, r *http.Request) (*resource.Item, bool){
+func UserFromToken(users *resource.Resource, ctx context.Context, r *http.Request) (*resource.Item, bool) {
 	tokenString, err := request.HeaderExtractor{"Authorization"}.ExtractToken(r)
 	fmt.Println("tokenString:", tokenString)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -49,18 +46,18 @@ func UserFromToken(users *resource.Resource, ctx context.Context, r *http.Reques
 	if token.Valid {
 		fmt.Println("You look nice today")
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		    fmt.Println(claims["user_id"])
-				user, err := users.Get(ctx, r, claims["user_id"])
-				if err == nil && user != nil {
-					return user, true
-				} else {
-					return nil, false
-				}
-		} else {
-		    fmt.Println(err)
+			fmt.Println(claims["user_id"])
+			user, err := users.Get(ctx, r, claims["user_id"])
+			if err == nil && user != nil {
+				return user, true
+			} else {
 				return nil, false
+			}
+		} else {
+			fmt.Println(err)
+			return nil, false
 		}
-	} else{
+	} else {
 		fmt.Println("Not valid")
 		return nil, false
 	}
@@ -118,8 +115,7 @@ func NewJWTHandler(users *resource.Resource, jwtKeyFunc jwt.Keyfunc) func(next h
 // AuthResourceHook is a resource event handler that protect the resource from unauthorized users
 type AuthResourceHook struct {
 	UserField string
-	users *resource.Resource
-
+	users     *resource.Resource
 }
 
 // OnFind implements resource.FindEventHandler interface
@@ -161,24 +157,24 @@ func (a AuthResourceHook) OnGot(ctx context.Context, r *http.Request, item **res
 
 // OnInsert implements resource.InsertEventHandler interface
 func (a AuthResourceHook) OnInsert(ctx context.Context, r *http.Request, items []*resource.Item) error {
-		fmt.Println("OnInsert ctx:", ctx)
-		fmt.Println("OnInsert r:", r)
-		user, found := UserFromToken(a.users, ctx, r)
-		if !found {
-			return resource.ErrUnauthorized
-		}
-			// Check access right
-		for _, item := range items {
-			if u, found := item.Payload[a.UserField]; found {
-				if u != user.ID {
-					return resource.ErrUnauthorized
-				}
-			} else {
-				// If no user set for the item, set it to current user
-				item.Payload[a.UserField] = user.ID
+	fmt.Println("OnInsert ctx:", ctx)
+	fmt.Println("OnInsert r:", r)
+	user, found := UserFromToken(a.users, ctx, r)
+	if !found {
+		return resource.ErrUnauthorized
+	}
+	// Check access right
+	for _, item := range items {
+		if u, found := item.Payload[a.UserField]; found {
+			if u != user.ID {
+				return resource.ErrUnauthorized
 			}
+		} else {
+			// If no user set for the item, set it to current user
+			item.Payload[a.UserField] = user.ID
 		}
-		return nil
+	}
+	return nil
 }
 
 // OnUpdate implements resource.UpdateEventHandler interface
@@ -201,10 +197,10 @@ func (a AuthResourceHook) OnUpdate(ctx context.Context, r *http.Request, item *r
 	}
 	// Ensure user field is not altered
 	fmt.Println("item:", item)
- /*
-	if u, found := item.Payload[a.UserField]; !found || u != user.ID {
-		eturn resource.ErrUnauthorized
-	}*/
+	/*
+		if u, found := item.Payload[a.UserField]; !found || u != user.ID {
+			eturn resource.ErrUnauthorized
+		}*/
 	return nil
 }
 
@@ -1059,37 +1055,35 @@ func main() {
 		AllowedModes: resource.ReadWrite,
 	})
 
-
 	index.Bind("categories", category, mongo.NewHandler(session, db, "categories"), resource.Conf{
- 	 AllowedModes: resource.ReadWrite,
-  })
+		AllowedModes: resource.ReadWrite,
+	})
 
-  index.Bind("data", data, mongo.NewHandler(session, db, "datas"), resource.Conf{
- 	 AllowedModes: resource.ReadWrite,
-  })
-  index.Bind("feed", feed, mongo.NewHandler(session, db, "feeds"), resource.Conf{
- 	 AllowedModes: resource.ReadWrite,
-  })
-  index.Bind("news", news, mongo.NewHandler(session, db, "news"), resource.Conf{
- 	 AllowedModes: resource.ReadWrite,
-  })
-  index.Bind("video", video, mongo.NewHandler(session, db, "videos"), resource.Conf{
- 	 AllowedModes: resource.ReadWrite,
-  })
-  index.Bind("photo", photo, mongo.NewHandler(session, db, "photos"), resource.Conf{
- 	 AllowedModes: resource.ReadWrite,
-  })
-  index.Bind("country", video, mongo.NewHandler(session, db, "countries"), resource.Conf{
- 	 AllowedModes: resource.ReadWrite,
-  })
-  index.Bind("channel", channel, mongo.NewHandler(session, db, "channels"), resource.Conf{
- 	 AllowedModes: resource.ReadWrite,
-  })
-
+	index.Bind("data", data, mongo.NewHandler(session, db, "datas"), resource.Conf{
+		AllowedModes: resource.ReadWrite,
+	})
+	index.Bind("feed", feed, mongo.NewHandler(session, db, "feeds"), resource.Conf{
+		AllowedModes: resource.ReadWrite,
+	})
+	index.Bind("news", news, mongo.NewHandler(session, db, "news"), resource.Conf{
+		AllowedModes: resource.ReadWrite,
+	})
+	index.Bind("video", video, mongo.NewHandler(session, db, "videos"), resource.Conf{
+		AllowedModes: resource.ReadWrite,
+	})
+	index.Bind("photo", photo, mongo.NewHandler(session, db, "photos"), resource.Conf{
+		AllowedModes: resource.ReadWrite,
+	})
+	index.Bind("country", video, mongo.NewHandler(session, db, "countries"), resource.Conf{
+		AllowedModes: resource.ReadWrite,
+	})
+	index.Bind("channel", channel, mongo.NewHandler(session, db, "channels"), resource.Conf{
+		AllowedModes: resource.ReadWrite,
+	})
 
 	// Protect resources
-	users.Use(AuthResourceHook{UserField: "id", users:users})
-	posts.Use(AuthResourceHook{UserField: "user", users:users})
+	users.Use(AuthResourceHook{UserField: "id", users: users})
+	posts.Use(AuthResourceHook{UserField: "user", users: users})
 
 	// Create API HTTP handler for the resource graph
 	api, err := rest.NewHandler(index)
