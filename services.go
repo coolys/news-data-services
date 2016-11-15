@@ -19,10 +19,6 @@ import (
 	"github.com/cool-rest/rest-layer-mongo"
 )
 
-// NOTE: this example show how to integrate REST Layer with JWT. No authentication is performed
-// in this example. It is assumed that you are using a third party authentication system that
-// generates JWT tokens with a user_id claim.
-
 type key int
 
 const userKey key = 0
@@ -1088,13 +1084,13 @@ func main() {
 
 	// Protect resources
 	users.Use(AuthResourceHook{UserField: "id", users: users})
-	videos.Use(AuthResourceHook{UserField:"id", users:users})
-	feeds.Use(AuthResourceHook{UserField:"id", users:users})
-	data.Use(AuthResourceHook{UserField:"id", users:users})
-	photos.Use(AuthResourceHook{UserField:"id", users:users})
-	country.Use(AuthResourceHook{UserField:"id", users:users})
-	channel.Use(AuthResourceHook{UserField:"id", users:users})
-	category.Use(AuthResourceHook{UserField:"id", users:users})
+	videos.Use(AuthResourceHook{UserField:"user", users:users})
+	feeds.Use(AuthResourceHook{UserField:"user", users:users})
+	data.Use(AuthResourceHook{UserField:"user", users:users})
+	photos.Use(AuthResourceHook{UserField:"user", users:users})
+	country.Use(AuthResourceHook{UserField:"user", users:users})
+	channel.Use(AuthResourceHook{UserField:"user", users:users})
+	category.Use(AuthResourceHook{UserField:"user", users:users})
 	posts.Use(AuthResourceHook{UserField: "user", users: users})
 
 	// Create API HTTP handler for the resource graph
