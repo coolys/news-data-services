@@ -40,12 +40,14 @@ func UserFromContext(ctx context.Context) (*resource.Item, bool) {
 
 func UserFromToken(users *resource.Resource, ctx context.Context, r *http.Request) (*resource.Item, bool) {
 	tokenString, err := request.HeaderExtractor{"Authorization"}.ExtractToken(r)
+	if tokenString == "" {
+		return nil, false
+	}
 	fmt.Println("tokenString:", tokenString)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte("secret"), nil
 	})
 	if token.Valid {
-		fmt.Println("You look nice today")
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			fmt.Println(claims["user_id"])
 			user, err := users.Get(ctx, r, claims["user_id"])
@@ -128,10 +130,11 @@ func (a AuthResourceHook) OnFind(ctx context.Context, r *http.Request, lookup *r
 	if !found {
 		return resource.ErrUnauthorized
 	}
+	fmt.Println("user:", user)
 	// Add a lookup condition to restrict to result on objects owned by this user
-	lookup.AddQuery(schema.Query{
+	/*lookup.AddQuery(schema.Query{
 		schema.Equal{Field: a.UserField, Value: user.ID},
-	})
+	})*/
 	return nil
 }
 
@@ -149,10 +152,11 @@ func (a AuthResourceHook) OnGot(ctx context.Context, r *http.Request, item **res
 		*err = resource.ErrUnauthorized
 		return
 	}
+	fmt.Println("user:", user)
 	// Check access right
-	if u, found := (*item).Payload[a.UserField]; !found || u != user.ID {
+	/*if u, found := (*item).Payload[a.UserField]; !found || u != user.ID {
 		*err = resource.ErrNotFound
-	}
+	}*/
 	return
 }
 
@@ -1056,34 +1060,41 @@ func main() {
 		AllowedModes: resource.ReadWrite,
 	})
 
-	index.Bind("categories", category, mongo.NewHandler(session, db, "categories"), resource.Conf{
+	category := index.Bind("categories", category, mongo.NewHandler(session, db, "categories"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
 
-	index.Bind("data", data, mongo.NewHandler(session, db, "datas"), resource.Conf{
+	data := index.Bind("data", data, mongo.NewHandler(session, db, "data"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
-	index.Bind("feed", feed, mongo.NewHandler(session, db, "feeds"), resource.Conf{
+	feeds := index.Bind("feed", feed, mongo.NewHandler(session, db, "feed"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
 	index.Bind("news", news, mongo.NewHandler(session, db, "news"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
-	index.Bind("video", video, mongo.NewHandler(session, db, "videos"), resource.Conf{
+	videos := index.Bind("video", video, mongo.NewHandler(session, db, "video"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
-	index.Bind("photo", photo, mongo.NewHandler(session, db, "photos"), resource.Conf{
+	photos := index.Bind("photo", photo, mongo.NewHandler(session, db, "photo"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
-	index.Bind("country", video, mongo.NewHandler(session, db, "countries"), resource.Conf{
+	country := index.Bind("country", video, mongo.NewHandler(session, db, "countries"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
-	index.Bind("channel", channel, mongo.NewHandler(session, db, "channels"), resource.Conf{
+	channel := index.Bind("channel", channel, mongo.NewHandler(session, db, "channels"), resource.Conf{
 		AllowedModes: resource.ReadWrite,
 	})
 
 	// Protect resources
 	users.Use(AuthResourceHook{UserField: "id", users: users})
+	videos.Use(AuthResourceHook{UserField:"id", users:users})
+	feeds.Use(AuthResourceHook{UserField:"id", users:users})
+	data.Use(AuthResourceHook{UserField:"id", users:users})
+	photos.Use(AuthResourceHook{UserField:"id", users:users})
+	country.Use(AuthResourceHook{UserField:"id", users:users})
+	channel.Use(AuthResourceHook{UserField:"id", users:users})
+	category.Use(AuthResourceHook{UserField:"id", users:users})
 	posts.Use(AuthResourceHook{UserField: "user", users: users})
 
 	// Create API HTTP handler for the resource graph
