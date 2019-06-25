@@ -1022,7 +1022,7 @@ var (
 func main() {
 	flag.Parse()
 
-	session, err := mgo.Dial("127.0.0.1")
+	session, err := mgo.Dial("MONGO_DB_HOST")
 	if err != nil {
 		log.Fatalf("Can't connect to MongoDB: %s", err)
 	}
